@@ -1,0 +1,5 @@
+#!/bin/sh
+exec dbus-run-session sh -c '
+  gentoo-pipewire-launcher &
+  exec start-hyprland
+'

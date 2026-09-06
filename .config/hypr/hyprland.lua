@@ -1,0 +1,1 @@
+/home/a/configs/hypr/hyprland.lua

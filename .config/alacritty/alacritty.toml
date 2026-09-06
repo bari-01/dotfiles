@@ -1,0 +1,156 @@
+[terminal]
+shell = "/bin/zsh"
+
+#[general]
+#import = [
+#  # uncomment the flavour you want below:
+#  #"~/.config/alacritty/catppuccin-latte.toml"
+#  # "~/.config/alacritty/catppuccin-frappe.toml"
+#   "~/.config/alacritty/catppuccin-macchiato.toml"
+#  # "~/.config/alacritty/catppuccin-mocha.toml"
+#]
+
+[font]
+size = 11.0
+
+[env]
+TERM = "xterm-256color"
+
+[bell]
+duration = 0
+#animation = "None"
+
+[colors.primary]
+background = "#161B20"
+foreground = "#CCDBD5"
+
+[colors.cursor]
+text = "#161B20"
+cursor = "#CCDBD5"
+
+[colors.selection]
+text = "#3A4857"
+background = "#D5E4F7"
+
+[colors.normal]
+black   = "#161B20"
+red     = "#A874FF"
+green   = "#63DEDA"
+yellow  = "#75FCDD"
+blue    = "#7EB2CB"
+magenta = "#AAA1ED"
+cyan    = "#82D7E3"
+white   = "#CCDBD5"
+
+[colors.bright]
+black   = "#B1BCB5"
+red     = "#D0B2FF"
+green   = "#F4FFFE"
+yellow  = "#FFFFFF"
+blue    = "#C0E2EC"
+magenta = "#DDD4FF"
+cyan    = "#EDFDFF"
+white   = "#D3E4FA"
+
+[[colors.indexed_colors]]
+index = 232
+color = "#003353"
+
+[[colors.indexed_colors]]
+index = 233
+color = "#CEE5FF"
+
+[[colors.indexed_colors]]
+index = 234
+color = "#233240"
+
+[[colors.indexed_colors]]
+index = 235
+color = "#D5E4F7"
+
+[[colors.indexed_colors]]
+index = 236
+color = "#392A49"
+
+[[colors.indexed_colors]]
+index = 237
+color = "#000000"
+
+[[colors.indexed_colors]]
+index = 238
+color = "#690005"
+
+[[colors.indexed_colors]]
+index = 239
+color = "#FFDAD6"
+
+[[colors.indexed_colors]]
+index = 240
+color = "#003353"
+
+[[colors.indexed_colors]]
+index = 243
+color = "#9BCBFB"
+
+[[colors.indexed_colors]]
+index = 244
+color = "#FFB4AB"
+
+[[colors.indexed_colors]]
+index = 245
+color = "#42474E"
+
+[[colors.indexed_colors]]
+index = 248
+color = "#93000A"
+
+[[colors.indexed_colors]]
+index = 249
+color = "#FFB4AB"
+
+[[colors.indexed_colors]]
+index = 250
+color = "#9C89AE"
+
+[[colors.indexed_colors]]
+index = 251
+color = "#D3BFE6"
+
+[[colors.indexed_colors]]
+index = 252
+color = "#3A4857"
+
+[[colors.indexed_colors]]
+index = 253
+color = "#B9C8DA"
+
+[[colors.indexed_colors]]
+index = 254
+color = "#0E4A73"
+
+[[colors.indexed_colors]]
+index = 255
+color = "#9BCBFB"
+
+# [font.bold]
+# family = "Iosevka Fixed Curly Slab"
+# style = "Bold"
+# 
+# [font.bold_italic]
+# family = "Iosevka Fixed Curly Slab"
+# style = "Bold Italic"
+# 
+# [font.italic]
+# family = "Iosevka Fixed Curly Slab"
+# style = "Italic"
+
+[font.normal]
+family = "JetbrainsMono"
+style = "Regular"
+
+[window]
+padding.x = 21
+padding.y = 21
+dynamic_padding = false
+#urgent_on_bell = false
+

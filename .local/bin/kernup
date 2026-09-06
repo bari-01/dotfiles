@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+configloc="/home/a/configs/defconfig"
+emerge -vauDUg @world  || true # checks for driver updates, optional
+kernel=$(eselect kernel list | awk -F'[][]' '/linux-/ {print $2}' | tail -n 1)
+eselect kernel set "$kernel"
+eselect kernel list
+echo "Using kernel: $(readlink -f /usr/src/linux)"
+while true; do
+    read -r -p "Continue? (y/n): " yn
+    case "$yn" in
+        [Yy]) break ;;
+        [Nn]) exit 1 ;;
+        *) ;;
+    esac
+done
+cp "$configloc" /usr/src/linux/arch/x86/configs/my_defconfig
+builddir="/tmp/kernel-build_$kernel"
+rm -rf -- "$builddir"
+mkdir -p -- "$builddir"
+cd /usr/src/linux
+make O="$builddir" my_defconfig
+make O="$builddir" oldconfig
+while true; do
+    read -r -p "Save defconfig? (y/n): " yn
+    case "$yn" in
+        [Yy])
+            echo "Saving defconfig file."
+            make O="$builddir" savedefconfig
+            cp "$builddir/defconfig" "$configloc"
+            break ;;
+        [Nn]) break ;;
+        *) ;;
+    esac
+done
+make O="$builddir" -j"$(($(nproc)*3/2))"
+make O="$builddir" modules_install
+make O="$builddir" install
+emerge @module-rebuild
