@@ -18,7 +18,7 @@ call plug#begin()
 Plug 'preservim/nerdtree' |
             \ Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'ycm-core/YouCompleteMe'
-Plug 'lervag/vimtex'
+Plug 'lervag/vimtex', { 'tag': 'v2.15' }
 Plug 'slint-ui/vim-slint'
 Plug 'wellle/context.vim'
 Plug 'catppuccin/vim', { 'as': 'catppuccin' }
@@ -67,6 +67,7 @@ let g:vimtex_view_method='zathura'
 let g:vimtex_quickfix_mode=0
 set conceallevel=1
 let g:tex_conceal='abdmg'
+hi! def link Conceal Statement
 let g:vimtex_syntax_conceal = {
 \ 'spacing': 0,
 \}
@@ -94,6 +95,7 @@ let g:vimtex_compiler_latexmk = {
 "        \   '-Z shell-escape',
 "        \ ],
 "        \}
+let maplocalleader=","
 nnoremap <localleader>lc :w<cr>:VimtexCompile<cr>
 nnoremap <localleader>lv :VimtexView<cr>
 "autocmd FileType tex,latex nnoremap <silent> <leader>p :call mdip#LatexClipboardImage()<CR>
@@ -439,8 +441,10 @@ let maplocalleader=","
 
 nnoremap j gj
 nnoremap k gk
-nnoremap <Up> gk
-nnoremap <Down> gj
+nnoremap <Up> <Nop>
+nnoremap <Down> <Nop>
+nnoremap <End> <Nop>
+nnoremap <Home> <Nop>
 
 nnoremap <leader>p :call PasteImage()<CR>
 nmap <F8> :TagbarToggle<CR>
@@ -555,7 +559,11 @@ augroup END
 "" settings
 let NERDTreeShowHidden=1
 let g:NERDTreeChDirMode = 2
+let g:NERDTreeNotificationThreshold = 1000
 
+if exists(':Windows') == 2
+  delcommand Windows
+endif
 """""""""""""""""""""
 "  bottom terminal  "
 """""""""""""""""""""

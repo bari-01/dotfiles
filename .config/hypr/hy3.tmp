@@ -1,0 +1,40 @@
+local hy3 = hl.plugin.hy3
+
+-- Splitting
+hl.bind("SUPER + ALT + H", hy3.make_group("h"))
+hl.bind("SUPER + ALT + V", hy3.make_group("v"))
+
+-- Tabbed groups
+hl.bind("SUPER + W", hy3.make_group("tab", {
+    toggle = true,
+}))
+
+-- Toggle horizontal <-> vertical
+hl.bind("SUPER + E", hy3.change_group("opposite"))
+
+-- Tree navigation: Sway's focus parent / child
+hl.bind("SUPER + A", hy3.change_focus("raise"))
+hl.bind("SUPER + SHIFT + A", hy3.change_focus("lower"))
+
+-- Focus direction
+hl.bind("SUPER + Left",  hy3.move_focus("l"))
+hl.bind("SUPER + Right", hy3.move_focus("r"))
+hl.bind("SUPER + Up",    hy3.move_focus("u"))
+hl.bind("SUPER + Down",  hy3.move_focus("d"))
+
+-- Move windows
+hl.bind("SUPER + SHIFT + Left",  hy3.move_window("l"))
+hl.bind("SUPER + SHIFT + Right", hy3.move_window("r"))
+hl.bind("SUPER + SHIFT + Up",    hy3.move_window("u"))
+hl.bind("SUPER + SHIFT + Down",  hy3.move_window("d"))
+
+-- Focus tabs
+hl.bind("SUPER + BracketLeft", hy3.focus_tab({
+    direction = "l",
+    wrap = true,
+}))
+
+hl.bind("SUPER + BracketRight", hy3.focus_tab({
+    direction = "r",
+    wrap = true,
+}))
