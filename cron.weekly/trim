@@ -1,0 +1,26 @@
+#!/bin/sh
+#/sbin/fstrim -av
+#/usr/bin/eclean-kernel -L std -n 3
+#/usr/bin/eclean packages || true
+#/usr/bin/eclean-dist --deep
+#
+##!/bin/sh
+#
+LOG=/var/log/trim-weekly.log
+
+{
+    echo
+    echo "===== $(date) ====="
+
+    /sbin/fstrim -av
+    echo "fstrim rc=$?"
+
+    /usr/bin/eclean-kernel -L std -n 3
+    echo "eclean-kernel rc=$?"
+
+    /usr/bin/eclean packages || true
+    echo "eclean packages rc=$?"
+
+    /usr/bin/eclean-dist --deep
+    echo "eclean-dist rc=$?"
+} >>"$LOG" 2>&1
