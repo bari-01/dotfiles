@@ -4,12 +4,13 @@ MODE="${1:-}"
 TRAP="${2:-}"
 
 case "$MODE" in
-    vnc|sunshine|'') ;;
-                  *) ;
+    ''|vnc|sunshine) ;;
+    *) TRAP="a" ;;
 esac
-[ (-n "$MODE" && "$MODE" != "vnc" && $MODE != "sunshine") ||
-     (-n "$TRAP" && "$TRAP" != "notrap") ] &&
-     { echo "Usage: $0 {vnc|sunshine|''} {notrap}" >&2; exit 2 ; }
+case "$TRAP" in
+    ''|notrap);;
+    *) echo "Usage: $0 {vnc|sunshine|''} {notrap}" >&2; exit 2 ;;
+esac
 
 SWRUN="$(mktemp -d "/run/user/$(id -u)/sway-remote.XXXXXX")"
 
@@ -22,7 +23,7 @@ SWAYSOCK=""
 WAYLAND_DISPLAY=""
 
 cleanup() {
-    #set +e
+    set +e
     [ -n "$SUNSHINE_PID" ] && kill "$SUNSHINE_PID" 2>/dev/null
     [ -n "$WAYVNC_PID" ] && kill "$WAYVNC_PID" 2>/dev/null
     [ -n "$SWAYSOCK" ] && swaymsg -s "$SWAYSOCK" exit 2>/dev/null
@@ -43,7 +44,9 @@ while :; do
         -name 'sway-ipc.*.sock' -print -quit
     )"
     [ -n "$SWAYSOCK" ] && break
-    [ ! [ kill -0 "$SWAY_PID" 2>/dev/null ]] && exit 1
+    if ! kill -0 "$SWAY_PID" 2>/dev/null; then
+        exit 1
+    fi
     sleep 0.2
 done
 
@@ -55,7 +58,9 @@ while :; do
             -printf '%f\n' -quit
     )"
     [ -n "$WAYLAND_DISPLAY" ] && break
-    [ ! [ kill -0 "$SWAY_PID" 2>/dev/null ]] && exit 1
+    if ! kill -0 "$SWAY_PID" 2>/dev/null; then
+        exit 1
+    fi
     sleep 0.2
 done
 
@@ -69,25 +74,27 @@ echo "SWAYSOCK: $SWAYSOCK"
 
 swaymsg -s "$SWAYSOCK" output "$OUTPUT" resolution 1920x1080
 
-case "$MODE" in
-    vnc|'')
-        echo "Starting wayvnc on 0.0.0.0:5900"
+[ -z "$MODE" ] || [ "$MODE" = vnc ] && {
+    echo "Starting wayvnc on 0.0.0.0:5900"
 
-        env \
-            XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
-            WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
-            wayvnc 0.0.0.0 5900 &
+    env \
+        XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+        WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
+        wayvnc 0.0.0.0 5900 &
 
-        WAYVNC_PID=$!
-        ;;
-    sunshine|'')
-        env \
-            XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
-            WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
-            SWAYSOCK="$SWAYSOCK" \
-            sunshine &
+    WAYVNC_PID=$!
+    }
+[ -z "$MODE" ] || [ "$MODE" = sunshine ] && {
+    sed -i "s/^output_name.*/output_name = $OUTPUT/" \
+        ~/.config/sunshine/sunshine.conf
+    env \
+        XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+        WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
+        SWAYSOCK="$SWAYSOCK" \
+        sunshine &
 
-        SUNSHINE_PID=$!
-esac
+    SUNSHINE_PID=$!
+}
 
 [ -n "$TRAP" ] && wait "$SWAY_PID"
+
