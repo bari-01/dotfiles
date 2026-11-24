@@ -65,12 +65,29 @@ let g:vimtex_view_method='zathura'
 "let g:vimtex_view_general_viewer = 'okular'
 "let g:vimtex_view_general_options = '--unique file:@pdf\#src:@line@tex'
 let g:vimtex_quickfix_mode=0
-set conceallevel=1
-let g:tex_conceal='abdmg'
-hi! def link Conceal Statement
+set conceallevel=2
 let g:vimtex_syntax_conceal = {
-\ 'spacing': 0,
-\}
+            \ 'accents': 1,
+            \ 'ligatures': 1,
+            \ 'cites': 1,
+            \ 'fancy': 1,
+            \ 'spacing': 1,
+            \ 'greek': 1,
+            \ 'math_bounds': 1,
+            \ 'math_fracs': 1,
+            \ 'math_super_sub': 1,
+            \ 'math_symbols': 0,
+            \ 'math_delimiters': 0,
+            \ 'sections': 0,
+            \}
+
+let g:tex_conceal='abdmgs'
+"hi! def link Conceal Statement
+augroup MyColors
+  autocmd!
+  autocmd ColorScheme * hi! def link Conceal Statement
+augroup END
+
 let g:vimtex_compiler_method = 'latexmk'
 let g:vimtex_compiler_latexmk = {
             \ 'aux_dir' : '',
@@ -470,6 +487,7 @@ nnoremap <Leader>jj :lnext<CR>zz
 nnoremap <leader>jt :YcmCompleter GetType<CR>
 nnoremap <leader>jo :YcmCompleter GetDoc<CR>
 nnoremap <leader>jx :YcmCompleter FixIt<CR>
+nnoremap <leader>rn :YcmCompleter RefactorRename 
 
 "" fzf.vim
 nnoremap <C-p> :Files<CR>
@@ -486,40 +504,12 @@ nnoremap <leader>b :Buffers<CR>
 "  nerdtree  "
 """"""""""""""
 "" startup
-"autocmd StdinReadPre * let s:std_in=1
-"autocmd VimEnter *
-"  \ if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") |
-"  \   execute 'NERDTree' argv()[0] |
-"  \   wincmd p |
-"  \   enew |
-"  \ else |
-"  \   NERDTree |
-"  \   wincmd p |
-"  \ endif
-" Start NERDTree and put the cursor back in the other window.
-"autocmd VimEnter * NERDTree | wincmd p
-
+" Start NERDTree, unless a file or session is specified, eg. vim -S session_file.vim.
 autocmd StdinReadPre * let s:std_in=1
-"autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
-"            \ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
-
-" Start NERDTree. If a file is specified, move the cursor to its window.
-"autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if !&diff | NERDTree | if argc() > 0 || exists("s:std_in") | wincmd p | endif
-
-" Start NERDTree when Vim is started without file arguments.
-"autocmd StdinReadPre * let s:std_in=1
-"autocmd VimEnter * if argc() == 0 && !exists('s:std_in') | NERDTree | endif
-
-"
-" Exit Vim if NERDTree is the only window remaining in the only tab.
-"autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+autocmd VimEnter * if argc() == 0 && !exists('s:std_in') && v:this_session == '' | NERDTree | endif
 
 " Exit Vim if NERDTree is the only window remaining in the only tab.
 autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
-
-" Close the tab if NERDTree is the only window remaining in it.
-"autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
 
 " Close the tab if NERDTree is the only window remaining in it.
 autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
@@ -530,6 +520,17 @@ autocmd BufEnter * if bufname('#') =~ 'NERD_tree_\d\+' && bufname('%') !~ 'NERD_
 
 " Open the existing NERDTree on each new tab.
 autocmd BufWinEnter * if getcmdwintype() == '' | silent NERDTreeMirror | endif
+""" autocmd StdinReadPre * let s:std_in=1
+"autocmd VimEnter *
+"  \ if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") |
+"  \   execute 'NERDTree' argv()[0] |
+"  \   wincmd p |
+"  \   enew |
+"  \ else |
+"  \   NERDTree |
+"  \   wincmd p |
+"  \ endif
+
 
 "" auto resize
 function! SetNerdTreeWidth()
@@ -560,10 +561,40 @@ augroup END
 let NERDTreeShowHidden=1
 let g:NERDTreeChDirMode = 2
 let g:NERDTreeNotificationThreshold = 1000
+let g:NERDTreeFileLines = 1
+""" Function to open the file or NERDTree or netrw.
+"   Returns: 1 if either file explorer was opened; otherwise, 0.
+function! s:OpenFileOrExplorer(...)
+    if a:0 == 0 || a:1 == ''
+        NERDTree
+    elseif filereadable(a:1)
+        execute 'edit '.a:1
+        return 0
+    elseif a:1 =~? '^\(scp\|ftp\)://' " Add other protocols as needed.
+        execute 'Vexplore '.a:1
+    elseif isdirectory(a:1)
+        execute 'NERDTree '.a:1
+    endif
+    return 1
+endfunction
+
+" Auto commands to handle OS commandline arguments
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc()==1 && !exists('s:std_in') | if <SID>OpenFileOrExplorer(argv()[0]) | wincmd p | enew | wincmd p | endif | endif
+
+" Command to call the OpenFileOrExplorer function.
+command! -n=? -complete=file -bar Edit :call <SID>OpenFileOrExplorer('<args>')
+
+" Command-mode abbreviation to replace the :edit Vim command.
+cnoreabbrev e Edit
 
 if exists(':Windows') == 2
   delcommand Windows
 endif
+if exists(':W') == 2
+  delcommand Windows
+endif
+
 """""""""""""""""""""
 "  bottom terminal  "
 """""""""""""""""""""
