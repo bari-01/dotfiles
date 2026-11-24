@@ -20,11 +20,17 @@ I use these daily (alacritty's colors are stolen from a kitty theming script in 
 
 Mostly abandoned
 
-## hyprland config
+WM-
+
+## Sway(fx) config
+
+Copied from the hyprland lua config
+
+### hyprland config
 
 Working barebones hyprland (<=0.54 config), requires elogind, swayidle, swaylock, hyprshot, alacritty (default, optional), thunar (optional), wofi, nm-applet, ashell, wpctl, playerctl, firefox(default)
 
-## hyprland lua config
+### hyprland lua config
 
 Working barebones hyprland (>=0.55 config), requires alacritty (default), dolphin (optional), xbacklight, playerctl, wpctl, firefox(default), hyprlock, swaync(optional), waybar(optional)
 
