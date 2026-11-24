@@ -503,43 +503,50 @@ nnoremap <leader>b :Buffers<CR>
 """"""""""""""
 "  nerdtree  "
 """"""""""""""
-"" startup
+"" autocmds
 " Start NERDTree, unless a file or session is specified, eg. vim -S session_file.vim.
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 0 && !exists('s:std_in') && v:this_session == '' | NERDTree | endif
+"autocmd StdinReadPre * let s:std_in=1
+"autocmd VimEnter * if argc() == 0 && !exists('s:std_in') && v:this_session == '' | NERDTree | wincmd p | endif
 
 " Exit Vim if NERDTree is the only window remaining in the only tab.
-autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
+"autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
 
 " Close the tab if NERDTree is the only window remaining in it.
 autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
+
+"autocmd BufWinLeave * if winnr('$') == 1 &&
+"            \ (exists('b:NERDTree') || &filetype ==# 'netrw') |
+"            \ call feedkeys(":quit\<CR>:\<BS>") |
+"            \ endif
 
 " If another buffer tries to replace NERDTree, put it in the other window, and bring back NERDTree.
 autocmd BufEnter * if bufname('#') =~ 'NERD_tree_\d\+' && bufname('%') !~ 'NERD_tree_\d\+' && winnr('$') > 1 |
                         \ let buf=bufnr() | buffer# | execute "normal! \<C-W>w" | execute 'buffer'.buf | endif
 
 " Open the existing NERDTree on each new tab.
-autocmd BufWinEnter * if getcmdwintype() == '' | silent NERDTreeMirror | endif
-""" autocmd StdinReadPre * let s:std_in=1
-"autocmd VimEnter *
-"  \ if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") |
-"  \   execute 'NERDTree' argv()[0] |
-"  \   wincmd p |
-"  \   enew |
-"  \ else |
-"  \   NERDTree |
-"  \   wincmd p |
-"  \ endif
+autocmd BufWinEnter * if getcmdwintype() == '' && exists('t:NERDTreeBufName') == 1 | silent NERDTreeMirror | endif
 
+augroup ExplorerStartup
+    autocmd!
+    autocmd StdinReadPre * let s:std_in = 1
+    autocmd VimEnter * if !exists('s:std_in') && v:this_session ==# '' |
+                \ if <SID>OpenFileOrExplorer(
+                \     argc() == 1 ? argv(0) : getcwd()) |
+                \     wincmd p | enew | wincmd p |
+                \ endif |
+                \ endif
+augroup END
+command! -nargs=? -complete=file E call <SID>OpenFileOrExplorer(<q-args>)
+cnoreabbrev e E
 
 "" auto resize
 function! SetNerdTreeWidth()
   let l:width = max([15, float2nr(&columns * 0.15)])
   let g:NERDTreeWinSize = l:width
-  " Resize existing NERDTree window if open
-  if exists("t:NERDTreeBufName")
-    let l:curwin = winnr()
+  let l:curwin = winnr()
 
+  " Resize window if open
+  if exists("t:NERDTreeBufName")
     for l:w in range(1, winnr('$'))
       if getbufvar(winbufnr(l:w), '&filetype') ==# 'nerdtree'
         execute l:w . 'wincmd w'
@@ -547,9 +554,17 @@ function! SetNerdTreeWidth()
         break
       endif
     endfor
-
-    execute l:curwin . 'wincmd w'
   endif
+
+  if exists('t:netrw_lexbufnr')
+    let l:w = bufwinnr(t:netrw_lexbufnr)
+    if l:w > 0
+      execute l:w . 'wincmd w'
+      execute 'vertical resize ' . l:width
+    endif
+  endif
+
+  execute l:curwin . 'wincmd w'
 endfunction
 
 augroup NerdTreeResize
@@ -562,38 +577,79 @@ let NERDTreeShowHidden=1
 let g:NERDTreeChDirMode = 2
 let g:NERDTreeNotificationThreshold = 1000
 let g:NERDTreeFileLines = 1
-""" Function to open the file or NERDTree or netrw.
+let g:NERDTreeHijackNetrw = 0
+
+" netrw settings
+let g:netrw_liststyle = 3
+let g:netrw_banner = 0
+let g:netrw_winsize = 20
+let s:large_dir_threshold = 100
+let s:dir_entry_count = 0
+
+""" Function to open the thing
+function! s:CountDirEntry(name) abort
+    if s:dir_entry_count > s:large_dir_threshold
+        return -1
+    endif
+    let s:dir_entry_count += 1
+
+    " Stop counting
+    return s:dir_entry_count > s:large_dir_threshold ? -1 : 1
+endfunction
+
+function! s:IsLargeDir(path) abort
+    if !exists('*readdir')
+        return 0
+    endif
+
+    let s:dir_entry_count = 0
+    call readdir(a:path, function('s:CountDirEntry'))
+
+    return s:dir_entry_count > s:large_dir_threshold
+endfunction
+
 "   Returns: 1 if either file explorer was opened; otherwise, 0.
 function! s:OpenFileOrExplorer(...)
     if a:0 == 0 || a:1 == ''
         NERDTree
     elseif filereadable(a:1)
-        execute 'edit '.a:1
+        execute 'edit '.fnameescape(a:1)
         return 0
-    elseif a:1 =~? '^\(scp\|ftp\)://' " Add other protocols as needed.
-        execute 'Vexplore '.a:1
+    elseif a:1 =~? '^\(scp\|ftp\)://'
+        execute 'Lexplore '.fnameescape(a:1)
     elseif isdirectory(a:1)
-        execute 'NERDTree '.a:1
+        if s:IsLargeDir(a:1)
+            execute 'Lexplore '.fnameescape(a:1)
+        else
+            execute 'NERDTree '.fnameescape(a:1)
+        endif
     endif
     return 1
 endfunction
 
+"function! s:OpenFileOrExplorer(...)
+"    if a:0 == 0 || a:1 == ''
+"        NERDTree
+"    elseif filereadable(a:1)
+"        execute 'edit '.a:1
+"        return 0
+"    elseif a:1 =~? '^\(scp\|ftp\)://' " Add other protocols as needed.
+"        execute 'Vexplore '.a:1
+"    elseif isdirectory(a:1)
+"        execute 'NERDTree '.a:1
+"    endif
+"    return 1
+"endfunction
+"
 " Auto commands to handle OS commandline arguments
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc()==1 && !exists('s:std_in') | if <SID>OpenFileOrExplorer(argv()[0]) | wincmd p | enew | wincmd p | endif | endif
-
+"autocmd StdinReadPre * let s:std_in=1
+"autocmd VimEnter * if argc()==1 && !exists('s:std_in') | if <SID>OpenFileOrExplorer(argv()[0]) | wincmd p | enew | wincmd p | endif | endif
+"
 " Command to call the OpenFileOrExplorer function.
-command! -n=? -complete=file -bar Edit :call <SID>OpenFileOrExplorer('<args>')
-
+"command! -n=? -complete=file -bar Edit :call <SID>OpenFileOrExplorer('<args>')
+"
 " Command-mode abbreviation to replace the :edit Vim command.
-cnoreabbrev e Edit
-
-if exists(':Windows') == 2
-  delcommand Windows
-endif
-if exists(':W') == 2
-  delcommand Windows
-endif
+"cnoreabbrev e Edit
 
 """""""""""""""""""""
 "  bottom terminal  "
