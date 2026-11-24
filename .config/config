@@ -1,0 +1,469 @@
+set $mod            Mod4
+set $term           alacritty
+set $fileManager    dolphin
+set $browser        librewolf-bin
+set $officeSoftware libreoffice-bin
+set $textEditor     alacritty -e vim
+set $volumeMixer    pavucontrol-qt
+# or exshelmsg -l volmixer?
+set $settingsApp    better-control
+# or exshelmsg -l settingsmenu?
+set $taskManager    alacritty -e btop
+set $menu           pkill fuzzel || fuzzel
+# or exshelmsg -t launchertoggle?
+set $wallpaper      /home/a/Pictures/Wallpapers/random_wallpaper.png
+set $lock           swaylock -KFtLei $wallpaper
+# or exshelmsg -t lock
+set $scripts        ~/.config/sway/scripts
+
+set $center  floating enable, move position center
+set $popup   floating enable, resize set 45 ppt 45 ppt, move position center
+set $big     floating enable, resize set 60 ppt 65 ppt, move position center
+
+exec gnome-keyring-daemon --start --components=secrets
+exec swaync
+# or exshel nc plugin
+# hypridle: edit hypridle.conf so it calls swaylock / `swaymsg "output * power off"`
+# instead of hyprlock / hyprctl.
+exec hypridle
+# swayosd: volume/brightness popups (see media keys below)
+#exec swayosd-server
+# exshel osd plugin
+exec easyeffects --hide-window --service-mode
+exec wl-paste --type text  --watch cliphist store
+exec wl-paste --type image --watch cliphist store
+#exec /usr/libexec/hyprpolkitagent
+exec QT_STYLE_OVERRIDE=Breeze /usr/libexec/polkit-kde-authentication-agent-1
+ exec swayidle -w \
+          timeout 300 '$lock' \
+          timeout 330 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
+          before-sleep '$lock'
+
+
+
+# later: swaybar_command exshel -b bar.so -c bar.jsonc
+bar {
+    swaybar_command waybar
+}
+
+# Outputs / wallpaper / cursor
+# Solid colour first: sway rejects the whole `bg` line if the image is missing,
+# so this keeps you from ending up with a black screen.
+output * bg #101418 solid_color
+output * bg $wallpaper fill
+output * adaptive_sync off
+
+# Tearing needs BOTH this and a per-window allow_tearing (rules below), and only
+# applies to fullscreen windows.
+output * allow_tearing yes
+
+# Monitor-specific examples:
+output HDMI-A-1 mode 1920x1080@60Hz position 1920 0 scale 1
+output * color_profile icc /home/a/.local/share/icc/edid-native.icc
+# needs a build with ICC support
+
+seat seat0 xcursor_theme BreezeX-Black 26
+
+# ------------------------------------------------------------
+# Look: gaps, borders, corners, blur, shadows, dimming
+# ------------------------------------------------------------
+#font pango:sans-serif 10
+font monospace 10
+
+gaps inner 4
+gaps outer 5
+default_border pixel 1
+focus_on_window_activation focus
+
+#                         border     background  text     indicator  child_border
+client.focused            #42474e77  #42474e     #e0e2e8  #42474e77  #42474e77
+client.focused_inactive   #181c2033  #181c20     #c2c7cf  #181c2033  #181c2033
+client.unfocused          #181c2033  #181c20     #8c9199  #181c2033  #181c2033
+client.urgent             #ffb4ab    #ffb4ab     #690005  #ffb4ab    #ffb4ab
+
+#`--------------------------------------------
+
+corner_radius 18
+
+blur enable
+blur_xray enable
+blur_passes 3
+blur_radius 10
+blur_brightness 1.0
+blur_noise 0.05
+blur_contrast 0.89
+
+shadows enable
+shadow_blur_radius 20
+shadow_offset 0 2
+shadow_color #00000020
+
+default_dim_inactive 0.05
+
+animation_duration_ms 250
+
+# Blur/rounding/shadow for layer-shell surfaces. Namespaces: see
+#   swaymsg -t get_outputs | jq '.[].layer_shell_surfaces[].namespace'
+layer_effects "waybar" {
+    blur enable;
+    blur_xray enable;
+    blur_ignore_transparent enable;
+}
+# fuzzel
+layer_effects "launcher" {
+    blur enable;
+    blur_xray enable;
+    blur_ignore_transparent enable;
+    corner_radius 18;
+    shadows enable;
+    blur_passes 3;
+    blur_radius 20;
+    blur_noise 0.25;
+    #default_border pixel 0;
+}
+layer_effects "swaync-control-center" {
+    blur enable;
+    blur_xray enable;
+    blur_ignore_transparent enable;
+}
+layer_effects "swaync-notification-window" {
+    blur enable;
+    blur_xray enable;
+    blur_ignore_transparent enable;
+}
+# wlogout
+layer_effects "logout_dialog" {
+    blur enable;
+}
+
+#`---------------------------------------------------
+
+input "type:keyboard" {
+    xkb_layout    us,us
+    xkb_variant   ,dvorak
+    xkb_options   grp:win_space_toggle
+    xkb_numlock   enabled
+    repeat_delay  250
+    repeat_rate   60
+}
+input "type:touchpad" {
+    #natural_scroll  enabled
+    dwt             enabled
+    click_method    clickfinger
+    tap             enabled
+    scroll_factor   1
+    drag_lock enabled_sticky
+}
+input "type:pointer" {
+    accel_profile  adaptive
+    pointer_accel  -0.1
+}
+focus_follows_mouse yes
+
+# Touchpad gestures
+bindgesture swipe:3:left  move left
+bindgesture swipe:3:right move right
+bindgesture swipe:3:up    move up
+bindgesture swipe:3:down  move down
+bindgesture swipe:4:left  workspace next_on_output
+bindgesture swipe:4:right workspace prev_on_output
+
+#   `app_id` matches native Wayland windows, `class` matches XWayland ones.
+# Dialogs (title matches work for both Wayland and XWayland)
+for_window [title="^(Open File)(.*)$"]            $center
+for_window [title="^(Select a File)(.*)$"]        $center
+for_window [title="^(Select what to share)(.*)$"] $center
+for_window [title="^(Choose wallpaper)(.*)$"]     $big
+for_window [title="^(Open Folder)(.*)$"]          $center
+for_window [title="^(Save As)(.*)$"]              $center
+for_window [title="^(Library)(.*)$"]              $center
+for_window [title="^(File Upload)(.*)$"]          $center
+for_window [title="(.*)(wants to save)$"]         $center
+for_window [title="(.*)(wants to open)$"]         $center
+for_window [title="^(Copying)(.*)(Dolphin)$"]     $center
+for_window [app_id="librewolf" title="^(Opening )(.*)$"] $center
+for_window [class="librewolf"  title="^(Opening )(.*)$"] $center
+
+# Small utility apps
+for_window [app_id="^pavucontrol-qt$"]               $popup
+for_window [class="^pavucontrol-qt$"]                $popup
+for_window [app_id="^org\.pulseaudio\.pavucontrol$"] $popup
+for_window [class="^pavucontrol$"]                   $popup
+for_window [app_id="^nm-connection-editor$"]         $popup
+for_window [class="^nm-connection-editor$"]          $popup
+for_window [app_id="^Zotero$"]                       floating enable, resize set 45 ppt 45 ppt
+for_window [class="^Zotero$"]                        floating enable, resize set 45 ppt 45 ppt
+for_window [app_id="^blueberry\.py$"]                floating enable
+for_window [class="^blueberry\.py$"]                 floating enable
+for_window [app_id="^guifetch$"]                     floating enable
+for_window [class="^guifetch$"]                      floating enable
+for_window [app_id=".*plasmawindowed.*"]             floating enable
+for_window [class=".*plasmawindowed.*"]              floating enable
+for_window [app_id="^kcm_.*"]                        floating enable
+for_window [class="^kcm_.*"]                         floating enable
+for_window [app_id=".*bluedevilwizard"]              floating enable
+for_window [class=".*bluedevilwizard"]               floating enable
+for_window [app_id="^org\.freedesktop\.impl\.portal\.desktop\.kde$"] $big
+for_window [class="^org\.freedesktop\.impl\.portal\.desktop\.kde$"]  $big
+
+# KDE icon-change helper: float it and shove it off-screen
+for_window [app_id="^plasma-changeicons$"] floating enable, move position 999999 999999
+for_window [class="^plasma-changeicons$"]  floating enable, move position 999999 999999
+
+# Warp: keep it tiled
+for_window [app_id="^dev\.warp\.Warp$"] floating disable
+for_window [class="^dev\.warp\.Warp$"]  floating disable
+
+# Picture-in-Picture: small, pinned, bottom-right  (73%/70% ≈ the old monitor_w*0.73 / monitor_h*0.72)
+for_window [title="^([Pp]icture[-\s]?[Ii]n[-\s]?[Pp]icture)(.*)$"] floating enable, sticky enable, resize set 25 ppt 25 ppt, move position 73 ppt 70 ppt
+
+# Screen-share indicator: pinned, parked near the bottom centre
+for_window [title=".*is sharing (a window|your screen).*"] floating enable, sticky enable, move position 38 ppt 94 ppt
+
+# Don't let the screen lock/blank while something is fullscreen (video, games)
+for_window [all] inhibit_idle fullscreen
+
+# Tearing for games (replaces Hyprland's `immediate`; also needs the output setting above)
+for_window [title=".*\.exe"]       allow_tearing yes
+for_window [title=".*minecraft.*"] allow_tearing yes
+for_window [class="^steam_app.*"]  allow_tearing yes
+
+# No shadows on tiled windows. (Evaluated when a window opens, so the float-toggle
+# bind below flips shadows along with it to keep them in sync.)
+for_window [tiling] shadows disable
+
+for_window [app_id="org\.ladybird\.Ladybird"] corner_radius 0
+for_window [class="org\.ladybird\.Ladybird"] corner_radius 0
+
+bindsym $mod+Shift+c reload
+bindsym $mod+d            exec $menu
+bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
+
+# Apps
+bindsym $mod+Return            exec $term
+#bindsym $mod+t                 exec $term
+#bindsym Ctrl+Mod1+t            exec $term
+bindsym $mod+e                 exec $fileManager
+#bindsym $mod+w                 exec $browser
+bindsym $mod+x                 exec $textEditor
+#bindsym $mod+i                 exec $settingsApp
+bindsym Ctrl+$mod+v            exec $volumeMixer
+bindsym Ctrl+Shift+Escape      exec $taskManager
+bindsym Ctrl+$mod+Shift+Mod1+w exec $officeSoftware
+bindsym $mod+n                 exec swaync-client -t
+
+# Window groups
+bindsym $mod+b         split h
+bindsym $mod+v         split v
+bindsym $mod+g         layout tabbed
+bindsym $mod+i         layout stacking
+bindsym $mod+Ctrl+g    layout toggle split
+bindsym $mod+Tab       focus next
+bindsym $mod+Shift+Tab focus prev
+
+# Mouse: hold $mod + left-drag to move (works on tiled windows too),
+# $mod + right-drag to resize.
+floating_modifier $mod normal
+
+# Focus
+bindsym $mod+h             focus left
+#bindsym $mod+bracketleft   focus left
+bindsym $mod+j             focus down
+bindsym $mod+k             focus up
+bindsym $mod+l             focus right
+#bindsym $mod+bracketright  focus right
+
+# Move window
+bindsym $mod+Shift+h            move left
+#bindsym $mod+Shift+bracketleft  move left
+bindsym $mod+Shift+j            move down
+bindsym $mod+Shift+k            move up
+bindsym $mod+Shift+l            move right
+#bindsym $mod+Shift+bracketright move right
+
+#bindsym $mod+q kill
+bindsym $mod+Shift+q kill
+
+bindsym $mod+Shift+Mod1+q exec kill -9 $(swaymsg -t get_tree | jq '.. | objects | select(.focused == true) | .pid')
+
+# Split ratio
+#bindsym $mod+semicolon   resize shrink width 10 ppt
+#bindsym $mod+apostrophe  resize grow  width 10 ppt
+set $left h
+set $down j
+set $up k
+set $right l
+mode "resize" {
+    # left will shrink the containers width
+    # right will grow the containers width
+    # up will shrink the containers height
+    # down will grow the containers height
+    bindsym $left resize shrink width 10px
+    bindsym $down resize grow height 10px
+    bindsym $up resize shrink height 10px
+    bindsym $right resize grow width 10px
+
+    # Ditto, with arrow keys
+    bindsym Left resize shrink width 10px
+    bindsym Down resize grow height 10px
+    bindsym Up resize shrink height 10px
+    bindsym Right resize grow width 10px
+
+    # Return to default mode
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# Float / fullscreen / maximize / pin
+bindsym $mod+Shift+f floating toggle, shadows toggle
+bindsym $mod+f       fullscreen toggle
+#bindsym $mod+d       exec $scripts/maximize.sh
+# (sway can only pin floating windows, so pinning floats the window first)
+bindsym $mod+p       floating enable, sticky toggle
+bindsym $mod+Left   exec pkill -SIGUSR1 waybar
+
+# Scratchpad
+bindsym $mod+Mod1+s     move container to scratchpad
+bindsym $mod+s          scratchpad show
+bindsym Ctrl+$mod+s     scratchpad show
+bindsym --whole-window $mod+button8 scratchpad show
+
+bindsym Ctrl+$mod+backslash resize set 640 480
+
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+bindsym $mod+0 workspace number 10
+
+bindsym $mod+Mod1+1 move container to workspace number 1
+bindsym $mod+Mod1+2 move container to workspace number 2
+bindsym $mod+Mod1+3 move container to workspace number 3
+bindsym $mod+Mod1+4 move container to workspace number 4
+bindsym $mod+Mod1+5 move container to workspace number 5
+bindsym $mod+Mod1+6 move container to workspace number 6
+bindsym $mod+Mod1+7 move container to workspace number 7
+bindsym $mod+Mod1+8 move container to workspace number 8
+bindsym $mod+Mod1+9 move container to workspace number 9
+bindsym $mod+Mod1+0 move container to workspace number 10
+
+# Numpad (by keycode, so it works with NumLock on — you have xkb_numlock enabled).
+# 87-89 = KP1-3, 83-85 = KP4-6, 79-81 = KP7-9, 90 = KP0
+bindcode $mod+87 workspace number 1
+bindcode $mod+88 workspace number 2
+bindcode $mod+89 workspace number 3
+bindcode $mod+83 workspace number 4
+bindcode $mod+84 workspace number 5
+bindcode $mod+85 workspace number 6
+bindcode $mod+79 workspace number 7
+bindcode $mod+80 workspace number 8
+bindcode $mod+81 workspace number 9
+bindcode $mod+90 workspace number 10
+
+bindcode $mod+Mod1+87 move container to workspace number 1
+bindcode $mod+Mod1+88 move container to workspace number 2
+bindcode $mod+Mod1+89 move container to workspace number 3
+bindcode $mod+Mod1+83 move container to workspace number 4
+bindcode $mod+Mod1+84 move container to workspace number 5
+bindcode $mod+Mod1+85 move container to workspace number 6
+bindcode $mod+Mod1+79 move container to workspace number 7
+bindcode $mod+Mod1+80 move container to workspace number 8
+bindcode $mod+Mod1+81 move container to workspace number 9
+bindcode $mod+Mod1+90 move container to workspace number 10
+
+# Relative jumps by number (see scripts/ws-rel.sh)
+bindsym Ctrl+$mod+h            exec $scripts/ws-rel.sh focus -1
+bindsym Ctrl+$mod+l            exec $scripts/ws-rel.sh focus +1
+#bindsym Ctrl+$mod+bracketleft  exec $scripts/ws-rel.sh focus -1
+#bindsym Ctrl+$mod+bracketright exec $scripts/ws-rel.sh focus +1
+#bindsym Ctrl+$mod+Up           exec $scripts/ws-rel.sh focus -5
+#bindsym Ctrl+$mod+Down         exec $scripts/ws-rel.sh focus +5
+#bindsym $mod+Page_Up           exec $scripts/ws-rel.sh focus -1
+#bindsym $mod+Page_Down         exec $scripts/ws-rel.sh focus +1
+bindsym $mod+Page_Up           exec $scripts/ws-rel.sh focus -5
+bindsym $mod+Page_Down         exec $scripts/ws-rel.sh focus +5
+#bindsym Ctrl+$mod+Page_Up      exec $scripts/ws-rel.sh focus -1
+#bindsym Ctrl+$mod+Page_Down    exec $scripts/ws-rel.sh focus +1
+#bindsym --whole-window $mod+button4      exec $scripts/ws-rel.sh focus -1
+#bindsym --whole-window $mod+button5      exec $scripts/ws-rel.sh focus +1
+#bindsym --whole-window Ctrl+$mod+button4 exec $scripts/ws-rel.sh focus -1
+#bindsym --whole-window Ctrl+$mod+button5 exec $scripts/ws-rel.sh focus +1
+
+# Send window to prev/next workspace (and follow it)
+bindsym $mod+Shift+Page_Up    exec $scripts/ws-rel.sh move -1
+bindsym $mod+Shift+Page_Down  exec $scripts/ws-rel.sh move +1
+#bindsym $mod+Mod1+Page_Up     exec $scripts/ws-rel.sh move -1
+#bindsym $mod+Mod1+Page_Down   exec $scripts/ws-rel.sh move +1
+#bindsym Ctrl+$mod+Shift+Left  exec $scripts/ws-rel.sh move -1
+#bindsym Ctrl+$mod+Shift+Right exec $scripts/ws-rel.sh move +1
+#bindsym --whole-window $mod+Shift+button4 exec $scripts/ws-rel.sh move -1
+#bindsym --whole-window $mod+Shift+button5 exec $scripts/ws-rel.sh move +1
+#bindsym --whole-window $mod+Mod1+button4  exec $scripts/ws-rel.sh move -1
+#bindsym --whole-window $mod+Mod1+button5  exec $scripts/ws-rel.sh move +1
+
+# Multi-monitor
+bindsym Ctrl+$mod+Mod1+Left  focus output left
+bindsym Ctrl+$mod+Mod1+Right focus output right
+
+# ---- Utilities --------------------------------------------------
+bindsym $mod+c exec pkill fuzzel || cliphist list | fuzzel --match-mode fzf --dmenu | cliphist decode | wl-copy
+# bindsym $mod+Shift+c exec hyprpicker -a
+# forgot whats that
+
+# Screenshots / recording
+bindsym $mod+Shift+s                      exec $scripts/screenshot.sh region
+bindsym --locked Print                    exec $scripts/screenshot.sh screen
+bindsym --locked --no-repeat Ctrl+Print   exec $scripts/screenshot.sh screen-file
+bindsym --locked $mod+Shift+r             exec $scripts/record.sh region
+bindsym --locked Ctrl+Mod1+r              exec $scripts/record.sh screen
+bindsym --locked $mod+Shift+Mod1+r        exec $scripts/record.sh screen sound
+
+# ---- Brightness / volume (SwayOSD shows the popup) --------------
+#bindsym --locked XF86MonBrightnessUp   exec swayosd-client --brightness +5
+#bindsym --locked XF86MonBrightnessDown exec swayosd-client --brightness -5
+#bindsym --locked $mod+F1               exec swayosd-client --brightness +5
+#bindsym --locked $mod+F2               exec swayosd-client --brightness -5
+#
+#bindsym --locked XF86AudioRaiseVolume  exec swayosd-client --output-volume +2 --max-volume 150
+#bindsym --locked XF86AudioLowerVolume  exec swayosd-client --output-volume -2 --max-volume 150
+#bindsym --locked XF86AudioMute         exec swayosd-client --output-volume mute-toggle
+#bindsym --locked $mod+Shift+m          exec swayosd-client --output-volume mute-toggle
+#bindsym --locked XF86AudioMicMute      exec swayosd-client --input-volume mute-toggle
+#bindsym --locked $mod+Mod1+m           exec swayosd-client --input-volume mute-toggle
+#bindsym --locked Mod1+XF86AudioMute    exec swayosd-client --input-volume mute-toggle
+bindsym --locked XF86MonBrightnessUp   exec xbacklight +1
+bindsym --locked XF86MonBrightnessDown exec xbacklight -1
+bindsym --locked $mod+F1               exec xbacklight +1
+bindsym --locked $mod+F2               exec xbacklight -1
+
+bindsym --locked XF86AudioRaiseVolume  exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+ -l 1.5
+bindsym --locked XF86AudioLowerVolume  exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-
+bindsym --locked XF86AudioMute         exec wpctl set-mute @DEFAULT_SINK@ toggle
+bindsym --locked XF86AudioMicMute      exec wpctl set-mute @DEFAULT_SOURCE@ toggle
+
+#bindsym --locked $mod+Shift+m          exec swayosd-client --output-volume mute-toggle
+#bindsym --locked $mod+Mod1+m           exec swayosd-client --input-volume mute-toggle
+#bindsym --locked Mod1+XF86AudioMute    exec swayosd-client --input-volume mute-toggle
+
+# ---- Media ------------------------------------------------------
+bindsym --locked XF86AudioNext   exec playerctl next
+bindsym --locked XF86AudioPrev   exec playerctl previous
+bindsym --locked XF86AudioPlay   exec playerctl play-pause
+bindsym --locked XF86AudioPause  exec playerctl play-pause
+#bindsym --locked $mod+Shift+n    exec playerctl next
+#bindsym --locked $mod+Shift+b    exec playerctl previous
+#bindsym --locked $mod+Shift+p    exec playerctl play-pause
+#bindsym --whole-window $mod+Shift+Mod1+button8 exec playerctl previous
+#bindsym --whole-window $mod+Shift+Mod1+button9 exec playerctl next
+
+# ---- Session ----------------------------------------------------
+bindsym $mod+Right                 exec $lock
+bindsym --locked $mod+Shift+Right  exec systemctl suspend
+bindsym Ctrl+Mod1+Delete           exec pkill wlogout || wlogout -p layer-shell
+bindsym Ctrl+Shift+Mod1+$mod+Delete exec systemctl poweroff
